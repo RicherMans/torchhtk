@@ -26,9 +26,9 @@ luarocks make rocks/torchhtk-0.0-1.rockspec
 
 ## Methods and classes
 
- * [header] loadheader(filepath [string]) :  Loads only the header of the specified file. No extra memory is allocated or data loaded.
- * [torch.FloatTensor] load(filepath [string]) : Loads the data from the given filepath. Returns a torch.FloatTensor which dimensions are `nsamples * featuredim`.
- * write(filepath [string],data [torch.FloatTensor], Featuretype [string]) : Writes out an htk file. `data` specifies the vector which should be written out with sizes `nsampels * featuredim`. Featuretype needs to be one of the known [HTK types](http://www.ee.columbia.edu/ln/LabROSA/doc/HTKBook21/node58.html), e.g. `PLP_0` or for any default data, simply use `USER`.
+ * [header] loadheader( `filepath` [string]) :  Loads only the header of the specified `filepath`. No extra memory is allocated or data loaded.
+ * [torch.FloatTensor] load(`filepath` [string]) : Loads the data from the given filepath. Returns a torch.FloatTensor which dimensions are `nsamples * featuredim`.
+ * write( `filepath` [string], `data` [torch.FloatTensor], `featuretype` [string]) : Writes out an htk file. `data` specifies the vector which should be written out with sizes `nsampels * featuredim`. `featuretype` needs to be one of the known [HTK types](http://www.ee.columbia.edu/ln/LabROSA/doc/HTKBook21/node58.html), e.g. `PLP_0` or for any default data, simply use `USER`.
 
 ## Usage
 
