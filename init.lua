@@ -1,4 +1,3 @@
-require 'torch'
 local ffi = require("ffi")
 local argcheck = require 'argcheck'
 
@@ -9,7 +8,7 @@ ffi.cdef[[
           int writehtkfile(const char* fname,htkheader_t *header,THFloatTensor* data);
           ]]
 
-local cflua = ffi.load(package.searchpath('libhtkread', package.cpath))
+local cflua = ffi.load(package.searchpath('libhtkread', package.cpath,package.path))
 
 local htkutils = {}
 
