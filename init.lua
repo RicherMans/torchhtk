@@ -8,7 +8,8 @@ ffi.cdef[[
           int writehtkfile(const char* fname,htkheader_t *header,THFloatTensor* data);
           ]]
 
-local cflua = ffi.load(package.searchpath('libhtkread', package.cpath,package.path))
+
+local cflua = ffi.load(package.searchpath('libtorchhtk', package.cpath,package.path))
 
 local htkutils = {}
 
