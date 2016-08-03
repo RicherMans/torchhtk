@@ -95,18 +95,13 @@ extern "C" {
         }
         // We already read the input header, so need to skip the first 12 bytes.
         inp.seekg(12 + (sample_bytes * (sample - 1))  );
-        std::vector<char> samplebuf(sample_bytes);
-        inp.read(reinterpret_cast<char*>(samplebuf.data()),sample_bytes);
+
+        // Read the file directly into the storage Insert into the storage. 
+        inp.read(reinterpret_cast<char*>(storage),sample_bytes);
         float result;
-        for(auto j = 0 ; j < sample_bytes ;j+=4){
+        for(auto j = 0 ; j < featdim ; j+=1){
             // Swapping the elements from big endian to little endian
-            std::swap(samplebuf[j+3],samplebuf[j]);
-            std::swap(samplebuf[j+2],samplebuf[j+1]);
-            // Now copy the char bit array to a float
-            // Copying the little to big endian
-            memcpy(&result, &samplebuf[j], sizeof(result));
-            // Insert into the storage.
-            storage[(j/4)] = result;
+            endswap(&storage[j]);
         }
         inp.close();
 
