@@ -1,5 +1,5 @@
 package = "torchhtk"
-version = "0.0-1"
+version = "scm-1"
 
 source = {
    url = "git://github.com/Richermans/torchhtk",
