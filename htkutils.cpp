@@ -9,7 +9,14 @@
 #include <stdint.h>
 #include <endian.h>
 #include <ctime>
+#include <algorithm>
 
+template <class T>
+void endswap(T *objp)
+{
+  unsigned char *memp = reinterpret_cast<unsigned char*>(objp);
+  std::reverse(memp, memp + sizeof(T));
+}
 extern "C" {
     typedef struct {
         int nsamples, sample_period;
@@ -51,6 +58,63 @@ extern "C" {
         return 0;
     }
 
+    // Only reads a single sample. Sample needs to be in range 1...N not in 0...N-1
+    int readhtksample(const char* fname,int sample,THFloatTensor* output){
+        htkheader_t header;
+        readhtkheader(fname,&header);
+        std::ifstream inp;
+        try{
+          inp.open(fname,std::ios::binary);
+        }catch(std::ios_base::failure& e){
+          std::string exept= "File cannot be opened !\n";
+          inp.close();
+          throw std::runtime_error(exept.c_str());
+        }
+        // Feature dimension in char size ( featdim *4)
+        int sample_bytes = header.samplesize/sizeof(char);
+        // Actual feature dimension
+        int featdim = header.samplesize/sizeof(float);
+        // the overall length of the output array
+        int tlen = featdim;
+        float *storage = (float*) malloc(tlen*sizeof(float));
+        // sample is out of range
+        if (sample > header.nsamples){
+            return 1;
+        }
+        // We already read the input header, so need to skip the first 12 bytes.
+        inp.seekg(12 + (sample_bytes * (sample - 1))  );
+        std::vector<char> samplebuf(sample_bytes);
+        inp.read(reinterpret_cast<char*>(samplebuf.data()),sample_bytes);
+        float result;
+        for(auto j = 0 ; j < sample_bytes ;j+=4){
+            // Swapping the elements from big endian to little endian
+            std::swap(samplebuf[j+3],samplebuf[j]);
+            std::swap(samplebuf[j+2],samplebuf[j+1]);
+            // Now copy the char bit array to a float
+            // Copying the little to big endian
+            memcpy(&result, &samplebuf[j], sizeof(result));
+            // Insert into the storage.
+            storage[(j/4)] = result;
+        }
+        inp.close();
+
+        // Allocate the outputstorage vector
+        THFloatStorage* outputstorage  = THFloatStorage_newWithData(storage,tlen);
+        if (outputstorage){
+            // Set the strides
+            long sizedata[1]   = { featdim };
+            long stridedata[1] = { 1 };
+            // Put the strides into the lua torch tensors
+            THLongStorage* size    = THLongStorage_newWithData(sizedata, 1);
+            THLongStorage* stride  = THLongStorage_newWithData(stridedata, 1);
+
+            THFloatTensor_setStorage(output,outputstorage,0, size, stride);
+            THFloatStorage_free(outputstorage);
+            return 0;
+        }
+        return 1;
+    }
+
     int readhtkfile(const char* fname,THFloatTensor* output){
         // Input is the given filename and the output Float Tensor.
         htkheader_t header;
@@ -73,6 +137,7 @@ extern "C" {
         float *storage = (float*) malloc(tlen*sizeof(float));
         std::vector<char> samplebuf(sample_bytes);
         auto row = 0;
+        float result=0;     
         for ( auto i=0 ; i < header.nsamples; i++) {
             // Reading in the input data
             inp.read(reinterpret_cast<char*>(samplebuf.data()),sample_bytes);
@@ -82,7 +147,6 @@ extern "C" {
                 std::swap(samplebuf[j+3],samplebuf[j]);
                 std::swap(samplebuf[j+2],samplebuf[j+1]);
                 // Now copy the char bit array to a float
-                float result=0;
                 // Copying the little to big endian
                 memcpy(&result, &samplebuf[j], sizeof(result));
                 // Insert into the storage. i*featdim is the current row, j/4 is the current col

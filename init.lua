@@ -6,6 +6,7 @@ ffi.cdef[[
           int readhtkheader(const char* fname,htkheader_t *header);
           int readhtkfile(const char* fname,THFloatTensor* output);
           int writehtkfile(const char* fname,htkheader_t *header,THFloatTensor* data);
+          int readhtksample(const char* fname,int sample,THFloatTensor* output);
           ]]
 
 
@@ -60,6 +61,7 @@ local loadhtkfile_check = argcheck{
       if paths.filep(fname) then return true end
     end,
   }
+
 }
 -- Loads in an htk feature and returns the given data only!
 -- If header needs ot be used, refer to loadheader
@@ -68,6 +70,34 @@ function htkutils.load(...)
   local out = torch.FloatTensor()
   local res = cflua.readhtkfile(filename,out:cdata())
   assert(res == 0, "Something went wrong while reading feature "..filename)
+  return out
+end
+
+local loadhtksample_check = argcheck{
+  {
+    name='filename',
+    type='string',
+    help="The file to be read",
+    check=function(fname)
+      if paths.filep(fname) then return true end
+    end,
+  },
+  {
+    name="sample",
+    type="number",
+    help="The sample which needs to be loaded",
+    check = function(sample)
+      if sample > 0 then return true else return false end
+    end
+  }
+
+}
+
+function htkutils.loadsample(...)
+  local filename, sample = loadhtksample_check(...)
+  local out = torch.FloatTensor()
+  local res = cflua.readhtksample(filename,sample,out:cdata())
+  assert(res == 0, "Something went wrong while reading feature "..filename .. " ( probably sample is out of range )")
   return out
 end
 

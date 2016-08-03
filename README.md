@@ -29,6 +29,7 @@ luarocks make rocks/torchhtk-0.0-1.rockspec
  * [header] loadheader( `filepath` [string]) :  Loads only the header of the specified `filepath`. No extra memory is allocated or data loaded.
  * [torch.FloatTensor] load(`filepath` [string]) : Loads the data from the given filepath. Returns a torch.FloatTensor which dimensions are `nsamples * featuredim`.
  * write( `filepath` [string], `data` [torch.FloatTensor], `featuretype` [string]) : Writes out an htk file. `data` specifies the vector which should be written out with sizes `nsampels * featuredim`. `featuretype` needs to be one of the known [HTK types](http://www.ee.columbia.edu/ln/LabROSA/doc/HTKBook21/node58.html), e.g. `PLP_0` or for any default data, simply use `USER`.
+ * loadsample(`filepath`[string], sample [number]) Loads only a given sample from the provided file. This method is generally less efficient than ```load```, if one wants to load in the whole file at once, but more efficient if only single samples are needed.
 
 ## Usage
 
@@ -41,6 +42,8 @@ local header = htkutils.loadheader('feature.plp')
 print(header) -- prints number of samples and other information
 -- Returns a torch.FloatTensor()
 local tensor = htkutils.load('feature.plp')
+-- Loads only the first sample in (instead of the whole utterance)
+local sample = htkutils.loadsample('feature.plp',1)
 ```
 
 To write files ( note that we only support `torch.FloatTensor` ):
