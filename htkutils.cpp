@@ -12,7 +12,7 @@
 #include <algorithm>
 
 template <class T>
-void endswap(T *objp)
+inline void endswap(T *objp)
 {
   unsigned char *memp = reinterpret_cast<unsigned char*>(objp);
   std::reverse(memp, memp + sizeof(T));
@@ -84,29 +84,28 @@ extern "C" {
         if (sample > header.nsamples){
             return 1;
         }
+        bool reusebuffer = output->nDimension > 0;
         float *storage;
         // Passed output is an empty tensor
-        if (output->nDimension == 0) {
+        if (! reusebuffer) {
             storage = (float*) malloc(tlen*sizeof(float));
         }
         // Passed output is an already allocated tensor- > reuse it
         else{
             storage = THFloatTensor_data(output);
         }
-        // We already read the input header, so need to skip the first 12 bytes.
+        // We already read the input header, so need to skip the first 12 bytes. Also we assume that sample is on range 1..N
         inp.seekg(12 + (sample_bytes * (sample - 1))  );
 
         // Read the file directly into the storage Insert into the storage. 
         inp.read(reinterpret_cast<char*>(storage),sample_bytes);
-        float result;
-        for(auto j = 0 ; j < featdim ; j+=1){
-            // Swapping the elements from big endian to little endian
-            endswap(&storage[j]);
-        }
         inp.close();
+        // Swapping the elements from big endian to little endian
+        for(auto j = 0 ; j < featdim ; j++) endswap(&storage[j]);
+
 
         // Passed tensor is empty, thus we allocate a new one and return it
-        if (output->nDimension == 0){
+        if (! reusebuffer){
             // Allocate the outputstorage vector
             THFloatStorage* outputstorage  = THFloatStorage_newWithData(storage,tlen);
             if (outputstorage){
