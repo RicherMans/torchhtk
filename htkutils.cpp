@@ -39,6 +39,15 @@ extern "C" {
     }
 
 
+    int readhtkheaderopen(std::ifstream &input,htkheader_t *header){
+        input.read((char*)header,sizeof(htkheader_t));
+        header->nsamples = be32toh(header->nsamples);
+        header->sample_period = be32toh(header->sample_period);
+        header->samplesize = be16toh(header->samplesize);
+        header->parmkind  = be16toh(header->parmkind);
+        return 0;
+    }
+
     int readhtkheader(const char *fname,htkheader_t *header){
         std::ifstream inp;
         try{
@@ -48,20 +57,14 @@ extern "C" {
           inp.close();
           throw std::runtime_error(exept.c_str());
         }
-        inp.read((char*)header,sizeof(htkheader_t));
+        readhtkheaderopen(inp,header);
         inp.close();
-        // Convert big endian to small endian
-        header->nsamples = be32toh(header->nsamples);
-        header->sample_period = be32toh(header->sample_period);
-        header->samplesize = be16toh(header->samplesize);
-        header->parmkind  = be16toh(header->parmkind);
         return 0;
     }
 
     // Only reads a single sample. Sample needs to be in range 1...N not in 0...N-1
     int readhtksample(const char* fname,int sample,THFloatTensor* output){
         htkheader_t header;
-        readhtkheader(fname,&header);
         std::ifstream inp;
         try{
           inp.open(fname,std::ios::binary);
@@ -70,16 +73,25 @@ extern "C" {
           inp.close();
           throw std::runtime_error(exept.c_str());
         }
+        readhtkheaderopen(inp,&header);
         // Feature dimension in char size ( featdim *4)
         int sample_bytes = header.samplesize/sizeof(char);
         // Actual feature dimension
         int featdim = header.samplesize/sizeof(float);
         // the overall length of the output array
         int tlen = featdim;
-        float *storage = (float*) malloc(tlen*sizeof(float));
         // sample is out of range
         if (sample > header.nsamples){
             return 1;
+        }
+        float *storage;
+        // Passed output is an empty tensor
+        if (output->nDimension == 0) {
+            storage = (float*) malloc(tlen*sizeof(float));
+        }
+        // Passed output is an already allocated tensor- > reuse it
+        else{
+            storage = THFloatTensor_data(output);
         }
         // We already read the input header, so need to skip the first 12 bytes.
         inp.seekg(12 + (sample_bytes * (sample - 1))  );
@@ -98,27 +110,35 @@ extern "C" {
         }
         inp.close();
 
-        // Allocate the outputstorage vector
-        THFloatStorage* outputstorage  = THFloatStorage_newWithData(storage,tlen);
-        if (outputstorage){
-            // Set the strides
-            long sizedata[1]   = { featdim };
-            long stridedata[1] = { 1 };
-            // Put the strides into the lua torch tensors
-            THLongStorage* size    = THLongStorage_newWithData(sizedata, 1);
-            THLongStorage* stride  = THLongStorage_newWithData(stridedata, 1);
+        // Passed tensor is empty, thus we allocate a new one and return it
+        if (output->nDimension == 0){
+            // Allocate the outputstorage vector
+            THFloatStorage* outputstorage  = THFloatStorage_newWithData(storage,tlen);
+            if (outputstorage){
+                // Set the strides
+                long sizedata[1]   = { featdim };
+                long stridedata[1] = { 1 };
+                // Put the strides into the lua torch tensors
+                THLongStorage* size    = THLongStorage_newWithData(sizedata, 1);
+                THLongStorage* stride  = THLongStorage_newWithData(stridedata, 1);
 
-            THFloatTensor_setStorage(output,outputstorage,0, size, stride);
-            THFloatStorage_free(outputstorage);
+                THFloatTensor_setStorage(output,outputstorage,0, size, stride);
+                THFloatStorage_free(outputstorage);
+                return 0;
+            }
+        }
+        // Reuse tensor
+        else{
+            // Result is already stored in storage
             return 0;
         }
+
         return 1;
     }
 
     int readhtkfile(const char* fname,THFloatTensor* output){
         // Input is the given filename and the output Float Tensor.
         htkheader_t header;
-        readhtkheader(fname,&header);
         std::ifstream inp;
         try{
           inp.open(fname,std::ios::binary);
@@ -127,6 +147,7 @@ extern "C" {
           inp.close();
           throw std::runtime_error(exept.c_str());
         }
+        readhtkheaderopen(inp,&header);
         // We already read the input header, so need to skip the first 12 bytes.
         inp.seekg(12);
 
@@ -154,6 +175,7 @@ extern "C" {
             }
         }
         inp.close();
+
 
         // Allocate the outputstorage vector
         THFloatStorage* outputstorage  = THFloatStorage_newWithData(storage,tlen);

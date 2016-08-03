@@ -2,7 +2,7 @@ local htkutils = paths.dofile('../init.lua')
 require "sys"
 
 local size = 120
-local dim = 1209
+local dim = 200
 arr = torch.FloatTensor(size,dim)
 for i=1,size do
     arr[i]:fill(i)

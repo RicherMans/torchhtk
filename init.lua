@@ -89,13 +89,18 @@ local loadhtksample_check = argcheck{
     check = function(sample)
       if sample > 0 then return true else return false end
     end
+  },
+  {
+    name="buf",
+    type='torch.FloatTensor',
+    opt=true
   }
 
 }
 
 function htkutils.loadsample(...)
-  local filename, sample = loadhtksample_check(...)
-  local out = torch.FloatTensor()
+  local filename, sample, buf = loadhtksample_check(...)
+  local out = buf or torch.FloatTensor()
   local res = cflua.readhtksample(filename,sample,out:cdata())
   assert(res == 0, "Something went wrong while reading feature "..filename .. " ( probably sample is out of range )")
   return out
