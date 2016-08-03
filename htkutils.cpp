@@ -151,22 +151,16 @@ extern "C" {
         // the overall length of the output array
         int tlen = featdim*header.nsamples;
         float *storage = (float*) malloc(tlen*sizeof(float));
-        std::vector<char> samplebuf(sample_bytes);
         auto row = 0;
-        float result=0;     
+        // float result=0;     
         for ( auto i=0 ; i < header.nsamples; i++) {
             // Reading in the input data
-            inp.read(reinterpret_cast<char*>(samplebuf.data()),sample_bytes);
             row = i * featdim;
-            for(auto j = 0 ; j < sample_bytes ;j+=4){
+            inp.read(reinterpret_cast<char*>(storage + row),sample_bytes);
+            // inp.read(reinterpret_cast<char*>(samplebuf.data()),sample_bytes);
+            for(auto j = 0 ; j < featdim ;j++){
                 // Swapping the elements from big endian to little endian
-                std::swap(samplebuf[j+3],samplebuf[j]);
-                std::swap(samplebuf[j+2],samplebuf[j+1]);
-                // Now copy the char bit array to a float
-                // Copying the little to big endian
-                memcpy(&result, &samplebuf[j], sizeof(result));
-                // Insert into the storage. i*featdim is the current row, j/4 is the current col
-                storage[row+(j/4)] = result;
+                endswap(&storage[row+j]);
             }
         }
         inp.close();
