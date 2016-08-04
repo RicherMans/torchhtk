@@ -28,8 +28,10 @@ te = sys.clock()
 print(string.format("Time to load feature was %.6f s" ,te -ts ))
 collectgarbage()
 
+
 ts= sys.clock()
 for i=1,1000 do
+  local tic = torch.tic()
   feat = htkutils.load(featurename)
   collectgarbage()
 end

@@ -12,31 +12,17 @@
 #include <algorithm>
 
 template <class T>
-inline void endswap(T *objp)
+inline void endswap(T &objp)
 {
-  unsigned char *memp = reinterpret_cast<unsigned char*>(objp);
+  unsigned char *memp = reinterpret_cast<unsigned char*>(&objp);
   std::reverse(memp, memp + sizeof(T));
 }
+
 extern "C" {
     typedef struct {
         int nsamples, sample_period;
         short samplesize, parmkind;
     } htkheader_t;
-
-    float swapfloatendian( const float inFloat )
-    {
-       float retVal;
-       char *floatToConvert = ( char* ) & inFloat;
-       char *returnFloat = ( char* ) & retVal;
-
-       // swap the bytes into a temporary buffer
-       returnFloat[0] = floatToConvert[3];
-       returnFloat[1] = floatToConvert[2];
-       returnFloat[2] = floatToConvert[1];
-       returnFloat[3] = floatToConvert[0];
-
-       return retVal;
-    }
 
 
     int readhtkheaderopen(std::ifstream &input,htkheader_t *header){
@@ -101,7 +87,7 @@ extern "C" {
         inp.read(reinterpret_cast<char*>(storage),sample_bytes);
         inp.close();
         // Swapping the elements from big endian to little endian
-        for(auto j = 0 ; j < featdim ; j++) endswap(&storage[j]);
+        std::for_each(storage,storage+featdim,endswap<float>);
 
 
         // Passed tensor is empty, thus we allocate a new one and return it
@@ -145,24 +131,14 @@ extern "C" {
         // We already read the input header, so need to skip the first 12 bytes.
         inp.seekg(12);
 
-        int sample_bytes = header.samplesize/sizeof(char);
+        int sample_bytes = header.samplesize/sizeof(char) * header.nsamples;
         int featdim = header.samplesize/sizeof(float);
         // the overall length of the output array
         int tlen = featdim*header.nsamples;
         float *storage = (float*) malloc(tlen*sizeof(float));
-        auto row = 0;
-        // float result=0;     
-        for ( auto i=0 ; i < header.nsamples; i++) {
-            // Reading in the input data
-            row = i * featdim;
-            inp.read(reinterpret_cast<char*>(storage + row),sample_bytes);
-            // inp.read(reinterpret_cast<char*>(samplebuf.data()),sample_bytes);
-            for(auto j = 0 ; j < featdim ;j++){
-                // Swapping the elements from big endian to little endian
-                endswap(&storage[row+j]);
-            }
-        }
+        inp.read(reinterpret_cast<char*>(storage),sample_bytes);
         inp.close();
+        std::for_each(storage,storage+tlen,endswap<float>);
 
 
         // Allocate the outputstorage vector
@@ -187,7 +163,7 @@ extern "C" {
         std::ofstream outputfile;
         outputfile.open(fname,std::ios::binary);
         if (outputfile){
-
+            // Little to big endian swaps
             int sample_period = htobe32(header->sample_period);
             int nsamples = htobe32(header->nsamples);
             short samplesize = htobe16(header->samplesize);
@@ -196,6 +172,7 @@ extern "C" {
             // std::cout << header->sample_period << " " << header->nsamples << " " << header->samplesize <<std::endl;
 
             float* tensordata = THFloatTensor_data(data);
+            auto nelement = THFloatTensor_nElement(data);
 
         //     // Write out the header
             outputfile.write(reinterpret_cast<char*>(&nsamples),sizeof(int));
@@ -203,14 +180,8 @@ extern "C" {
             outputfile.write(reinterpret_cast<char*>(&samplesize),sizeof(short));
             outputfile.write(reinterpret_cast<char*>(&parmkind),sizeof(short));
 
-            auto nElement = 1;
-            for(auto d = 0; d < data->nDimension; d++)
-                nElement *= data->size[d];
-
-            for(auto i=0u; i < nElement; i++){
-                float endianswapped = swapfloatendian(tensordata[i]);
-                outputfile.write(reinterpret_cast<char*>(&endianswapped),sizeof(float));
-            }
+            std::for_each(tensordata,tensordata+nelement,endswap<float>);
+            outputfile.write(reinterpret_cast<char*>(tensordata),sizeof(float)*nelement);
             outputfile.close();
         }
 
