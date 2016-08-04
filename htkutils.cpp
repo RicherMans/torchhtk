@@ -75,7 +75,7 @@ extern "C" {
         float *storage;
         // Passed output is an empty tensor
         if (! reusebuffer) {
-            storage = (float*) malloc(tlen*sizeof(float));
+            storage = (float*) THAlloc(tlen*sizeof(float));
         }
         // Passed output is an already allocated tensor- > reuse it
         else{
