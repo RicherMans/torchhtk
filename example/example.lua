@@ -1,3 +1,6 @@
+require 'paths'
+require 'torch'
+require 'xlua'
 local htkutils = paths.dofile('../init.lua')
 require "sys"
 

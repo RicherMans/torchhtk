@@ -132,15 +132,15 @@ extern "C" {
         // We already read the input header, so need to skip the first 12 bytes.
         inp.seekg(12);
 
-        int sample_bytes = header.samplesize/sizeof(char) * header.nsamples;
+        // Overall number of bytes
+        int sample_bytes = header.samplesize * header.nsamples;
         int featdim = header.samplesize/sizeof(float);
         // the overall length of the output array
         int tlen = featdim*header.nsamples;
-        float *storage = (float*) malloc(tlen*sizeof(float));
+        float *storage = (float*) THAlloc(tlen*sizeof(float));
         inp.read(reinterpret_cast<char*>(storage),sample_bytes);
         inp.close();
         std::for_each(storage,storage+tlen,endswap_32b<float>);
-
 
         // Allocate the outputstorage vector
         THFloatStorage* outputstorage  = THFloatStorage_newWithData(storage,tlen);
@@ -152,8 +152,10 @@ extern "C" {
             THLongStorage* size    = THLongStorage_newWithData(sizedata, 2);
             THLongStorage* stride  = THLongStorage_newWithData(stridedata, 2);
 
-            THFloatTensor_setStorage(output,outputstorage,0, size, stride);
+            THFloatStorage_free(output->storage);
+            THFloatTensor_setStorage(output,outputstorage,0LL, size, stride);
             THFloatStorage_free(outputstorage);
+
             return 0;
         }
         return 1;
