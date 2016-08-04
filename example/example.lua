@@ -8,6 +8,8 @@ for i=1,size do
     arr[i]:fill(i)
 end
 
+torch.save("test.th",arr)
+
 function writefile(filename)
 	htkutils.write(filename,arr,"PLP_0")
 end
@@ -28,6 +30,13 @@ te = sys.clock()
 print(string.format("Time to load feature was %.6f s" ,te -ts ))
 collectgarbage()
 
+local feat
+ts = sys.clock()
+feat = torch.load("test.th")
+te = sys.clock()
+print(string.format("Time to load torch feature was %.6f s" ,te -ts ))
+collectgarbage()
+
 
 ts= sys.clock()
 for i=1,1000 do
@@ -37,6 +46,15 @@ for i=1,1000 do
 end
 te = sys.clock()
 print("Time to read 1000 times was " .. te -ts )
+
+ts= sys.clock()
+for i=1,1000 do
+  local tic = torch.tic()
+  feat = torch.load("test.th")
+  collectgarbage()
+end
+te = sys.clock()
+print("Time to read torch 1000 times was " .. te -ts )
 
 local sample
 ts = sys.clock()

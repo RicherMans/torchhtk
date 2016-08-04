@@ -12,10 +12,11 @@
 #include <algorithm>
 
 template <class T>
-inline void endswap(T &objp)
+inline void endswap_32b(T &objp)
 {
   unsigned char *memp = reinterpret_cast<unsigned char*>(&objp);
-  std::reverse(memp, memp + sizeof(T));
+  std::swap(memp[0],memp[3]);
+  std::swap(memp[1],memp[2]);
 }
 
 extern "C" {
@@ -87,7 +88,7 @@ extern "C" {
         inp.read(reinterpret_cast<char*>(storage),sample_bytes);
         inp.close();
         // Swapping the elements from big endian to little endian
-        std::for_each(storage,storage+featdim,endswap<float>);
+        std::for_each(storage,storage+featdim,endswap_32b<float>);
 
 
         // Passed tensor is empty, thus we allocate a new one and return it
@@ -138,7 +139,7 @@ extern "C" {
         float *storage = (float*) malloc(tlen*sizeof(float));
         inp.read(reinterpret_cast<char*>(storage),sample_bytes);
         inp.close();
-        std::for_each(storage,storage+tlen,endswap<float>);
+        std::for_each(storage,storage+tlen,endswap_32b<float>);
 
 
         // Allocate the outputstorage vector
@@ -180,7 +181,7 @@ extern "C" {
             outputfile.write(reinterpret_cast<char*>(&samplesize),sizeof(short));
             outputfile.write(reinterpret_cast<char*>(&parmkind),sizeof(short));
 
-            std::for_each(tensordata,tensordata+nelement,endswap<float>);
+            std::for_each(tensordata,tensordata+nelement,endswap_32b<float>);
             outputfile.write(reinterpret_cast<char*>(tensordata),sizeof(float)*nelement);
             outputfile.close();
         }
