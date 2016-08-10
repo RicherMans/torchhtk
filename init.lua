@@ -102,8 +102,8 @@ function htkutils.loadsample(...)
   local filename, sample, buf = loadhtksample_check(...)
   local out = buf or torch.FloatTensor()
   local res = cflua.readhtksample(filename,sample,out:cdata())
-  assert(res == 0, "Something went wrong while reading feature "..filename .. " ( probably sample is out of range )")
-  return out
+  -- assert(res == 0, "Something went wrong while reading feature "..filename .. " ( probably sample is out of range )")
+  return out,res
 end
 
 
