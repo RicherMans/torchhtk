@@ -25,8 +25,6 @@ FIND_PACKAGE(Torch REQUIRED)
 # Get BLAS
 set(TORCH_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX})
 
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR})
-
 SET(src htkutils.cpp)
 SET(luasrc init.lua)
 ADD_TORCH_PACKAGE(torchhtk "${src}" "${luasrc}" "HTK utils for Torch")
