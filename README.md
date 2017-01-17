@@ -21,7 +21,7 @@ If that is not possible, do it manually:
 ```
 git clone https://github.com/RicherMans/torchhtk
 cd torchhtk
-luarocks make rocks/torchhtk-0.0-1.rockspec
+luarocks make rocks/torchhtk-scm-1.rockspec
 ```
 
 ## Methods and classes
