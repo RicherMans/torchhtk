@@ -9,8 +9,8 @@ ffi.cdef[[
           int readhtksample(const char* fname,int sample,THFloatTensor* output);
           ]]
 
-
 local cflua = ffi.load(package.searchpath('libtorchhtk', package.cpath,package.path))
+
 
 local htkutils = {}
 

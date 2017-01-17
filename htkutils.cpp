@@ -1,6 +1,5 @@
 #include <fstream>
 #include <TH.h>
-#include <luaT.h>
 #include <string>
 #include <stdexcept>
 #include <sstream>

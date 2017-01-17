@@ -22,15 +22,16 @@ endif()
 #Torch includes
 FIND_PACKAGE(Torch REQUIRED)
 
-# Get BLAS
-set(TORCH_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX})
+
+include_directories(${TORCH_INCLUDE_DIR})
+LINK_DIRECTORIES(${TORCH_LIBRARY_DIR})
 
 SET(src htkutils.cpp)
 SET(luasrc init.lua)
-ADD_TORCH_PACKAGE(torchhtk "${src}" "${luasrc}" "HTK utils for Torch")
-TARGET_LINK_LIBRARIES(torchhtk TH luaT z)
+ADD_TORCH_PACKAGE(torchhtk "${src}" "${luasrc}" "Compability Tools")
+TARGET_LINK_LIBRARIES(torchhtk TH luaT)
 
 
-# IF(LUALIB)
-#   TARGET_LINK_LIBRARIES(torchhtk ${LUALIB})
-# ENDIF()
+IF(LUALIB)
+  TARGET_LINK_LIBRARIES(torchhtk ${LUALIB})
+ENDIF()
